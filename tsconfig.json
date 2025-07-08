@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./packages/ui" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@satur/ui": ["./packages/ui"],
+      "@satur/ui/*": ["./packages/ui/*"]
+    }
+  }
+}
