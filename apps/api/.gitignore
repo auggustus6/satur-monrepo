@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+*.db
+*.sqlite
+.vercel
+.render
+.env

@@ -1,0 +1,713 @@
+---
+name: "Carlão - Marketplace de Serviços"
+description: "Sistema completo de marketplace de serviços com arquitetura limpa e padrões SOLID"
+version: "1.0.0"
+lastUpdated: "2025-01-02"
+---
+
+# 🏗️ Configuração de Arquitetura - Carlão
+
+## 🎯 Princípios Arquiteturais Obrigatórios
+
+### Clean Architecture
+- **Camadas bem definidas**: Entities → Use Cases → Controllers → Frameworks
+- **Regra de dependência**: Camadas internas não dependem de camadas externas
+- **Inversão de dependência**: Sempre dependa de abstrações, não de implementações
+- **Separação de responsabilidades**: Cada camada tem uma responsabilidade específica
+
+### Princípios SOLID
+
+#### Single Responsibility Principle (SRP)
+```typescript
+// ✅ CORRETO - Uma responsabilidade por classe
+class UserService {
+  async create(userData: CreateUserDto): Promise<UserEntity> {}
+  async findById(id: number): Promise<UserEntity> {}
+}
+
+class UserValidator {
+  validateDocument(document: string, type: DocumentType): boolean {}
+}
+
+// ❌ INCORRETO - Múltiplas responsabilidades
+class UserManager {
+  async createUser() {}
+  async sendEmail() {}
+  async validateDocument() {}
+  async generateReport() {}
+}
+```
+
+#### Open/Closed Principle (OCP)
+```typescript
+// ✅ CORRETO - Extensível sem modificação
+abstract class DocumentValidator {
+  abstract validate(document: string): boolean;
+}
+
+class CPFValidator extends DocumentValidator {
+  validate(document: string): boolean {
+    return isCPF(document);
+  }
+}
+
+// ❌ INCORRETO - Modificação necessária para extensão
+class DocumentValidator {
+  validate(document: string, type: 'CPF' | 'CNPJ'): boolean {
+    if (type === 'CPF') return isCPF(document);
+    if (type === 'CNPJ') return isCNPJ(document);
+    // Precisa modificar para adicionar novo tipo
+  }
+}
+```
+
+#### Liskov Substitution Principle (LSP)
+```typescript
+// ✅ CORRETO - Substituição transparente
+interface PaymentProcessor {
+  processPayment(amount: number): Promise<PaymentResult>;
+}
+
+class CreditCardProcessor implements PaymentProcessor {
+  async processPayment(amount: number): Promise<PaymentResult> {
+    // Implementação específica
+  }
+}
+
+// ❌ INCORRETO - Comportamento inconsistente
+class PixProcessor implements PaymentProcessor {
+  async processPayment(amount: number): Promise<PaymentResult> {
+    if (amount > 1000) throw new Error('PIX não suporta valores altos');
+    // Quebra o contrato da interface
+  }
+}
+```
+
+#### Interface Segregation Principle (ISP)
+```typescript
+// ✅ CORRETO - Interfaces específicas
+interface UserReader {
+  findById(id: number): Promise<UserEntity>;
+  findByEmail(email: string): Promise<UserEntity>;
+}
+
+interface UserWriter {
+  create(userData: CreateUserDto): Promise<UserEntity>;
+  update(id: number, userData: UpdateUserDto): Promise<UserEntity>;
+}
+
+// ❌ INCORRETO - Interface gorda
+interface UserRepository {
+  findById(id: number): Promise<UserEntity>;
+  create(userData: CreateUserDto): Promise<UserEntity>;
+  generateReport(): Promise<Report>;
+  sendEmail(email: string): Promise<void>;
+  validateDocument(doc: string): boolean;
+}
+```
+
+#### Dependency Inversion Principle (DIP)
+```typescript
+// ✅ CORRETO - Dependência de abstração
+@Injectable()
+class UserService {
+  constructor(private userRepository: IUserRepository) {}
+
+  async createUser(userData: CreateUserDto): Promise<UserEntity> {
+    return this.userRepository.create(userData);
+  }
+}
+
+// ❌ INCORRETO - Dependência de implementação
+@Injectable()
+class UserService {
+  constructor(private prisma: PrismaService) {}
+
+  async createUser(userData: CreateUserDto): Promise<UserEntity> {
+    return this.prisma.user.create({ data: userData });
+  }
+}
+```
+
+## 🏛️ Estrutura de Módulos Obrigatória
+
+### Backend (NestJS)
+```
+apps/api/src/
+├── [module]/
+│   ├── controller/           # Interface Adapters
+│   │   ├── [module].controller.ts
+│   │   └── [module].controller.spec.ts
+│   ├── service/              # Application Business Rules
+│   │   ├── [module].service.ts
+│   │   └── [module].service.spec.ts
+│   ├── repository/           # Data Access Layer
+│   │   ├── [module].repository.ts
+│   │   └── [module].repository.spec.ts
+│   ├── entities/             # Enterprise Business Rules
+│   │   └── [module].entity.ts
+│   ├── dto/                  # Data Transfer Objects
+│   │   ├── create-[module].dto.ts
+│   │   └── update-[module].dto.ts
+│   ├── validation/           # Business Rules Validation
+│   │   └── [module]-validation.service.ts
+│   └── [module].module.ts    # Module Definition
+└── common/                   # Shared Resources
+    ├── decorators/
+    ├── guards/
+    ├── interceptors/
+    └── pipes/
+```
+
+### Frontend (React)
+```
+apps/web/src/
+├── components/
+│   ├── [domain]/             # Domain-specific components
+│   ├── common/               # Shared components
+│   ├── forms/                # Form components
+│   ├── modals/               # Modal components
+│   └── dialogs/              # Dialog components
+├── hooks/                    # Custom hooks
+│   └── use[Domain].ts
+├── pages/                    # Page components
+│   └── [Domain]Page.tsx
+├── services/                 # API services
+│   └── [domain].service.ts
+├── stores/                   # State management
+│   └── [domain].store.ts
+├── types/                    # Type definitions
+│   └── [domain].ts
+└── utils/                    # Utility functions
+    └── [domain].utils.ts
+```
+
+## 📋 Padrões de Código Obrigatórios
+
+### 1. Naming Conventions
+
+#### Backend
+```typescript
+// Controllers
+export class UserController {}
+export class ServiceController {}
+
+// Services
+export class UserService {}
+export class PaymentService {}
+
+// Entities
+export class UserEntity {}
+export class ServiceEntity {}
+
+// DTOs
+export class CreateUserDto {}
+export class UpdateUserDto {}
+export class GetUsersQueryDto {}
+
+// Repositories
+export class UserRepository {}
+export class ServiceRepository {}
+```
+
+#### Frontend
+```typescript
+// Components
+export function UserCard() {}
+export function ServiceModal() {}
+
+// Hooks
+export function useUsers() {}
+export function useAuth() {}
+
+// Pages
+export function UsersPage() {}
+export function LoginPage() {}
+
+// Services
+export const userService = {}
+export const authService = {}
+
+// Stores
+export const useUserStore = create()
+export const useAuthStore = create()
+```
+
+### 2. File Structure
+
+#### Backend Files
+```typescript
+// Sempre use barrel exports
+// apps/api/src/user/index.ts
+export * from './controller/user.controller';
+export * from './service/user.service';
+export * from './entities/user.entity';
+export * from './dto/create-user.dto';
+export * from './user.module';
+```
+
+#### Frontend Files
+```typescript
+// Sempre use default exports para componentes
+// apps/web/src/components/UserCard.tsx
+export default function UserCard() {}
+
+// Named exports para utilitários
+// apps/web/src/utils/validation.ts
+export function validateEmail() {}
+export function validateDocument() {}
+```
+
+### 3. Error Handling
+
+#### Backend
+```typescript
+// ✅ CORRETO - Erros específicos
+throw new BadRequestException('Fornecedor deve ter localização');
+throw new NotFoundException('Usuário não encontrado');
+throw new ConflictException('Email já está em uso');
+
+// ❌ INCORRETO - Erros genéricos
+throw new Error('Erro');
+throw new BadRequestException('Erro de validação');
+```
+
+#### Frontend
+```typescript
+// ✅ CORRETO - Tratamento estruturado
+export function useErrorHandler() {
+  const handleError = useCallback((error: unknown) => {
+    if (error instanceof ApiError) {
+      switch (error.status) {
+        case 400:
+          toast.error(error.message);
+          break;
+        case 401:
+          toast.error('Sessão expirada. Faça login novamente.');
+          break;
+        case 403:
+          toast.error('Você não tem permissão para esta ação.');
+          break;
+        default:
+          toast.error('Erro inesperado. Tente novamente.');
+      }
+    }
+  }, []);
+
+  return { handleError };
+}
+```
+
+### 4. Validação de Dados
+
+#### Backend com Zod
+```typescript
+// ✅ CORRETO - Validação tipada
+const createUserSchema = z.object({
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  document: z.string().refine((doc) => {
+    return isCPF(doc) || isCNPJ(doc);
+  }, 'Documento inválido')
+});
+
+export class CreateUserDto extends createZodDto(createUserSchema) {}
+```
+
+#### Frontend com Zod
+```typescript
+// ✅ CORRETO - Mesma validação no frontend
+const loginSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres')
+});
+
+export function LoginForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema)
+  });
+}
+```
+
+## 🔒 Regras de Segurança
+
+### 1. Autenticação e Autorização
+```typescript
+// ✅ CORRETO - Proteção por roles
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
+@Controller('admin')
+export class AdminController {
+  @Get('users')
+  async getUsers(): Promise<UserEntity[]> {
+    return this.userService.findAll();
+  }
+}
+```
+
+### 2. Validação de Entrada
+```typescript
+// ✅ CORRETO - Sempre validar entrada
+@Post()
+async create(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+  // Validação automática via Zod
+  return this.userService.create(createUserDto);
+}
+```
+
+### 3. Sanitização de Dados
+```typescript
+// ✅ CORRETO - Sanitizar dados sensíveis
+export class UserEntity {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+
+  @Exclude()
+  password: string;
+
+  constructor(partial: Partial<UserEntity>) {
+    Object.assign(this, partial);
+  }
+}
+```
+
+## 🎨 Padrões de UI/UX
+
+### 1. Componentes Reutilizáveis
+```typescript
+// ✅ CORRETO - Componentes do design system
+import { Button, Card, Input, Label } from '@satur/ui';
+
+export function UserForm() {
+  return (
+    <Card>
+      <CardContent>
+        <Label htmlFor="name">Nome</Label>
+        <Input id="name" placeholder="Digite o nome" />
+        <Button type="submit">Salvar</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### 2. Loading States
+```typescript
+// ✅ CORRETO - Estados de loading
+export function UsersList() {
+  const { data: users, isLoading, error } = useUsers();
+
+  if (isLoading) {
+    return <div>Carregando usuários...</div>;
+  }
+
+  if (error) {
+    return <div>Erro ao carregar usuários</div>;
+  }
+
+  return (
+    <div>
+      {users?.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+}
+```
+
+### 3. Error Boundaries
+```typescript
+// ✅ CORRETO - Error boundaries
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>Algo deu errado. Tente recarregar a página.</div>;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## 📊 Performance
+
+### 1. Lazy Loading
+```typescript
+// ✅ CORRETO - Lazy loading de páginas
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+
+function App() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <Routes>
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/services" element={<ServicesPage />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+### 2. Memoização
+```typescript
+// ✅ CORRETO - Memoização de componentes pesados
+const UserCard = memo(({ user, onEdit }: UserCardProps) => {
+  const handleEdit = useCallback(() => {
+    onEdit(user);
+  }, [user, onEdit]);
+
+  return (
+    <Card>
+      <CardContent>
+        <h3>{user.name}</h3>
+        <p>{user.email}</p>
+        <Button onClick={handleEdit}>Editar</Button>
+      </CardContent>
+    </Card>
+  );
+});
+```
+
+### 3. Paginação
+```typescript
+// ✅ CORRETO - Sempre paginar listas grandes
+export function useUsers(
+  page: number = 1,
+  limit: number = 20,
+  search?: string
+) {
+  return useQuery({
+    queryKey: ['users', page, limit, search],
+    queryFn: () => usersApi.getAll(page, limit, search),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+}
+```
+
+## 🧪 Qualidade de Código
+
+### 1. TypeScript Strict
+```typescript
+// ✅ CORRETO - Tipos explícitos
+interface CreateUserRequest {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  locationId?: number;
+}
+
+// ❌ INCORRETO - any ou tipos implícitos
+function createUser(data: any): any {
+  return userService.create(data);
+}
+```
+
+### 2. Documentação
+```typescript
+// ✅ CORRETO - Documentação JSDoc
+/**
+ * Serviço responsável pela gestão de usuários
+ *
+ * @description Implementa as regras de negócio para:
+ * - Criação e validação de usuários
+ * - Aprovação de fornecedores
+ * - Gerenciamento de perfis
+ *
+ * @example
+ * ```typescript
+ * const userService = new UserService(userRepository);
+ * const user = await userService.create({
+ *   name: 'João Silva',
+ *   email: 'joao@email.com',
+ *   role: UserRole.SUPPLIER
+ * });
+ * ```
+ */
+@Injectable()
+export class UserService {
+  constructor(private userRepository: UserRepository) {}
+
+  /**
+   * Cria um novo usuário no sistema
+   *
+   * @param userData - Dados do usuário a ser criado
+   * @returns Promise com o usuário criado
+   * @throws BadRequestException quando dados inválidos
+   * @throws ConflictException quando email já existe
+   */
+  async create(userData: CreateUserDto): Promise<UserEntity> {
+    await this.validateBusinessRules(userData);
+    return this.userRepository.create(userData);
+  }
+}
+```
+
+### 3. Logging
+```typescript
+// ✅ CORRETO - Logging estruturado
+@Injectable()
+export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
+  async create(userData: CreateUserDto): Promise<UserEntity> {
+    this.logger.log(`Creating user with email: ${userData.email}`);
+
+    try {
+      const user = await this.userRepository.create(userData);
+      this.logger.log(`User created successfully with ID: ${user.id}`);
+      return user;
+    } catch (error) {
+      this.logger.error(`Failed to create user: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+}
+```
+
+## 🔧 Configuração de Ambiente
+
+### 1. Variáveis de Ambiente
+```typescript
+// ✅ CORRETO - Configuração tipada
+export default () => ({
+  port: parseInt(process.env.PORT, 10) || 3000,
+  database: {
+    url: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production'
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  }
+});
+```
+
+### 2. Docker
+```dockerfile
+# ✅ CORRETO - Multi-stage build
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "start:prod"]
+```
+
+## 📋 Checklist de Qualidade
+
+### ✅ Antes de Commit
+- [ ] Todos os testes passando
+- [ ] Lint sem erros
+- [ ] Tipos TypeScript válidos
+- [ ] Documentação atualizada
+- [ ] Variáveis de ambiente configuradas
+- [ ] Logs estruturados implementados
+
+### ✅ Antes de Deploy
+- [ ] Testes de integração passando
+- [ ] Build de produção funcionando
+- [ ] Migrações de banco testadas
+- [ ] Variáveis de ambiente de produção configuradas
+- [ ] Monitoramento configurado
+
+### ✅ Code Review
+- [ ] Princípios SOLID respeitados
+- [ ] Clean Architecture seguida
+- [ ] Padrões de naming consistentes
+- [ ] Error handling apropriado
+- [ ] Performance otimizada
+- [ ] Segurança implementada
+
+---
+
+## 🚫 Práticas Proibidas
+
+### ❌ Nunca Faça
+```typescript
+// ❌ INCORRETO - Violação de princípios
+class UserService {
+  async create(userData: any): Promise<any> {
+    // Lógica misturada
+    const user = await this.prisma.user.create({ data: userData });
+    await this.emailService.sendWelcomeEmail(user.email);
+    await this.logService.log('User created');
+    return user;
+  }
+}
+
+// ❌ INCORRETO - Sem validação
+@Post()
+async create(@Body() data: any): Promise<any> {
+  return this.userService.create(data);
+}
+
+// ❌ INCORRETO - Hardcoded values
+const MAX_USERS = 1000;
+const API_URL = 'http://localhost:3000';
+```
+
+### ✅ Sempre Faça
+```typescript
+// ✅ CORRETO - Seguindo princípios
+@Injectable()
+export class UserService {
+  constructor(
+    private userRepository: UserRepository,
+    private eventService: EventService
+  ) {}
+
+  async create(userData: CreateUserDto): Promise<UserEntity> {
+    await this.validateBusinessRules(userData);
+    const user = await this.userRepository.create(userData);
+    await this.eventService.emitUserCreated(user);
+    return user;
+  }
+}
+
+// ✅ CORRETO - Com validação
+@Post()
+async create(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+  return this.userService.create(createUserDto);
+}
+
+// ✅ CORRETO - Configuração externa
+export default () => ({
+  maxUsers: parseInt(process.env.MAX_USERS, 10) || 1000,
+  apiUrl: process.env.API_URL || 'http://localhost:3000'
+});
+```
+
+---
+
+**Configuração mantida por**: Equipe de Arquitetura Carlão
+**Última atualização**: Janeiro 2025
+**Versão**: 1.0.0
+
+> 📝 **Nota**: Esta configuração deve ser seguida rigorosamente em todo código gerado. Qualquer desvio deve ser justificado e documentado.

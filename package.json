@@ -1,0 +1,32 @@
+{
+  "name": "satur-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo para o projeto Carlão usando Turborepo",
+  "packageManager": "pnpm@8.15.6",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "api:dev": "turbo run dev --filter=api",
+    "web:dev": "turbo run dev --filter=web",
+    "ui:dev": "turbo run dev --filter=@satur/ui"
+  },
+  "devDependencies": {
+    "turbo": "^1.12.4",
+    "prettier": "^3.2.5",
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

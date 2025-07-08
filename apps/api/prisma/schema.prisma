@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  AGENCY
+  SUPPLIER
+  ADMIN
+  CUSTOMER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum DocumentType {
+  CPF
+  CNPJ
+}
+
+enum Currency {
+  BRL
+  USD
+  EUR
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  name         String
+  phone        String?
+  photoUrl     String?
+  role         UserRole      @default(CUSTOMER)
+  isApproved   Boolean       @default(false) // for suppliers
+  address      String?
+  city         String?
+  document     String?       @unique
+  documentType DocumentType?
+  deletedAt    DateTime?     // soft delete
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // relations
+  payments       Payment[]
+  userPayments   Payment[]            @relation("UserPayments")
+  passwordResets PasswordResetToken[]
+  location       Location?            @relation(fields: [locationId], references: [id])
+  locationId     Int?
+  serviceUsers   ServiceUser[]        // many-to-many with services
+  orders         Order[]              // orders made by this user
+
+  @@map("users")
+}
+
+model Location {
+  id        Int       @id @default(autoincrement())
+  city      String
+  state     String
+  deletedAt DateTime? // soft delete
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // relations
+  users    User[]
+  services Service[]
+
+  @@unique([city, state])
+  @@map("locations")
+}
+
+model Service {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  isActive    Boolean       @default(true)
+  deletedAt   DateTime?     // soft delete
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // relations
+  location     Location      @relation(fields: [locationId], references: [id])
+  locationId   Int           // required
+  serviceUsers ServiceUser[] // many-to-many with users
+  products     Product[]     // products offered by this service
+  orders       Order[]       // orders for this service
+
+  @@map("services")
+}
+
+model ServiceUser {
+  id        Int      @id @default(autoincrement())
+  serviceId Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, userId])
+  @@map("service_users")
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  amount        Int
+  status        PaymentStatus @default(PENDING)
+  description   String?
+  paymentMethod String?
+  paidAt        DateTime?
+  processedBy   User?         @relation(fields: [processedById], references: [id])
+  processedById Int?
+  user          User?         @relation("UserPayments", fields: [userId], references: [id])
+  userId        Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id               Int       @id @default(autoincrement())
+  name             String
+  description      String?
+  // Price in centavos (e.g., R$ 12.34 → 1234)
+  price            Int
+  currency         Currency  @default(BRL)
+  stripeProductId  String?   @unique
+  stripePriceId    String?   @unique
+
+  service          Service   @relation(fields: [serviceId], references: [id])
+  serviceId        Int
+
+  isActive         Boolean   @default(true)
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  orders           Order[]
+
+  @@map("products")
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  customer      User          @relation(fields: [customerId], references: [id])
+  customerId    Int
+  product       Product       @relation(fields: [productId], references: [id])
+  productId     Int
+  service       Service       @relation(fields: [serviceId], references: [id])
+  serviceId     Int
+  quantity      Int           @default(1)
+  // Total amount in centavos (e.g., R$ 12.34 × qty → 2468)
+  totalAmount   Int
+  status        PaymentStatus @default(PENDING)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("orders")
+}
