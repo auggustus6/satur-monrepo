@@ -9,13 +9,6 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -24,7 +17,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 
-@ApiTags('locations')
 @Controller('locations')
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
@@ -59,17 +51,6 @@ export class LocationController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Deletar localização' })
-  @ApiParam({ name: 'id', description: 'ID da localização', type: 'number' })
-  @ApiResponse({
-    status: 200,
-    description: 'Localização deletada com sucesso',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Localização não encontrada',
-  })
   async remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ message: string }> {
