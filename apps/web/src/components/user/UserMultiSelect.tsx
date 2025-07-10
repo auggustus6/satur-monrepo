@@ -142,7 +142,7 @@ export function UserMultiSelect({
         placeholder={placeholder}
         variant="default"
         maxCount={3}
-        modalPopover={true}
+        modalPopover={false}
         disabled={disabled}
         className={className}
         onSearchChange={handleSearchChange}

@@ -43,6 +43,7 @@ interface ServiceOption {
 }
 
 export function CreateProductModal({ open, onOpenChange }: CreateProductModalProps) {
+
   const [selectedService, setSelectedService] = useState<ServiceOption | null>(null);
   const [displayPrice, setDisplayPrice] = useState('');
 
@@ -56,25 +57,35 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
       description: '',
       price: 0,
       currency: 'BRL',
-      serviceId: 0,
       stripeProductId: '',
       stripePriceId: '',
       isActive: true,
     },
   });
 
+  const handleServiceSelect = (service: ServiceOption | null) => {
+    setSelectedService(service);
+    // Update form serviceId when service changes
+    if (service) {
+      form.setValue('serviceId', service.id, { shouldValidate: true, shouldDirty: true });
+    } else {
+      form.setValue('serviceId', undefined);
+    }
+  };
+
   const createMutation = useMutation({
-    mutationFn: (data: CreateProductFormData) => {
+    mutationFn: (finalData: CreateProductFormData & { serviceId: number }) => {
       const payload: CreateProductDto = {
-        name: data.name,
-        description: data.description || undefined,
+        name: finalData.name,
+        description: finalData.description || undefined,
         price: parseInputValue(displayPrice), // Converte para centavos
-        currency: data.currency,
-        serviceId: selectedService?.id || 0,
-        stripeProductId: data.stripeProductId || undefined,
-        stripePriceId: data.stripePriceId || undefined,
-        isActive: data.isActive,
+        currency: finalData.currency,
+        serviceId: finalData.serviceId,
+        stripeProductId: finalData.stripeProductId || undefined,
+        stripePriceId: finalData.stripePriceId || undefined,
+        isActive: finalData.isActive,
       };
+
       return productsApi.create(payload);
     },
     onSuccess: () => {
@@ -103,7 +114,14 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
       toast.error('Preço deve ser maior que zero');
       return;
     }
-    createMutation.mutate(data);
+
+    // Ensure serviceId is set properly
+    const finalData = {
+      ...data,
+      serviceId: selectedService.id, // Always use the selected service ID
+    };
+
+    createMutation.mutate(finalData);
   };
 
   const handlePriceChange = (value: string) => {
@@ -129,7 +147,30 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
         </DialogHeader>
 
         <Form {...form}>
+          {Object.keys(form.formState.errors).length > 0 && (
+            <div className="bg-red-50 border border-red-200 p-3 rounded">
+              <h4 className="text-red-800 font-medium">Erros de validação:</h4>
+              <ul className="text-red-700 text-sm mt-1">
+                {Object.entries(form.formState.errors).map(([field, error]) => (
+                  <li key={field}>• {field}: {error?.message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="serviceId"
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  <FormControl>
+                    <input type="hidden" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"
@@ -211,7 +252,7 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
             {/* Service Selection */}
             <ServiceSelect
               selectedService={selectedService}
-              onServiceSelect={setSelectedService}
+              onServiceSelect={handleServiceSelect}
               placeholder="Selecionar serviço..."
               required
             />

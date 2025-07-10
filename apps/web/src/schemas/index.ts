@@ -68,7 +68,7 @@ export const createProductSchema = z.object({
     .min(1, 'Preço deve ser maior que zero')
     .max(99999999, 'Preço deve ser menor que R$ 999.999,99'),
   currency: z.enum(['BRL', 'USD', 'EUR']),
-  serviceId: z.number().min(1, 'Serviço é obrigatório'),
+  serviceId: z.number().min(1, 'Serviço é obrigatório').optional(),
   stripeProductId: z.string().optional(),
   stripePriceId: z.string().optional(),
   isActive: z.boolean(),

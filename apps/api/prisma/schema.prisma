@@ -95,6 +95,9 @@ model Service {
   products     Product[]     // products offered by this service
   orders       Order[]       // orders for this service
 
+  @@index([locationId])
+  @@index([isActive])
+  @@index([locationId, isActive])
   @@map("services")
 }
 
@@ -157,6 +160,9 @@ model Product {
 
   orders           Order[]
 
+  @@index([serviceId])
+  @@index([isActive])
+  @@index([serviceId, isActive])
   @@map("products")
 }
 

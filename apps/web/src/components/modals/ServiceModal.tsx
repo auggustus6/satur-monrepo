@@ -145,7 +145,7 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
         />
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" onClick={(e) => e.stopPropagation()}>
         <div>
           <Label htmlFor="name">Nome do Serviço *</Label>
           <Input
@@ -177,10 +177,13 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
         <div>
           <Label htmlFor="locationId">Localização *</Label>
           <Select onValueChange={(value) => setValue('locationId', Number(value))} value={watch('locationId')?.toString()}>
-            <SelectTrigger className={errors.locationId ? 'border-red-500' : ''}>
+            <SelectTrigger 
+              className={errors.locationId ? 'border-red-500' : ''}
+              onClick={(e) => e.stopPropagation()}
+            >
               <SelectValue placeholder="Selecione uma localização" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent onClick={(e) => e.stopPropagation()}>
               {locations.map((location) => (
                 <SelectItem key={location.id} value={location.id.toString()}>
                   {location.city}, {location.state}
@@ -201,6 +204,7 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
           <Switch
             checked={watch('isActive')}
             onCheckedChange={(checked) => setValue('isActive', checked)}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
 

@@ -9,9 +9,10 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  disableOutsideClick?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = 'md', disableOutsideClick = false }: ModalProps) {
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -21,7 +22,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" className="relative z-50" onClose={disableOutsideClick ? () => {} : onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
