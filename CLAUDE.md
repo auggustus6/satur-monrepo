@@ -99,7 +99,6 @@ pnpm docker:down
 - **Modular structure** with dedicated modules for each domain
 - **JWT Authentication** with role-based access control
 - **Zod validation** for request/response schemas
-- **Swagger documentation** available at `/api` endpoint
 - **Soft deletes** implemented across entities
 - **API runs on port 3001** (configurable via PORT env var)
 
@@ -129,8 +128,7 @@ pnpm docker:down
 ### Development Workflow
 1. Backend API serves at `http://localhost:3001`
 2. Frontend serves at `http://localhost:5173`
-3. Swagger docs available at `http://localhost:3001/api`
-4. Database operations use Prisma ORM
+3. Database operations use Prisma ORM
 
 ### Authentication & Authorization
 - JWT tokens stored in localStorage
@@ -142,4 +140,3 @@ pnpm docker:down
 - Service platform connecting customers with service providers
 - Location-based service availability
 - Product/service ordering with payment tracking
-- Commission and payment processing workflows
